@@ -21,7 +21,7 @@ def _likely_role(summary: dict) -> tuple[str, float]:
 def load_midi_file(path: str, file_id: str | None = None) -> tuple[list[NoteEvent], list[TrackSummary], int]:
     try:
         import mido
-    except Exception as exc:  # pragma: no cover
+    except ImportError as exc:  # pragma: no cover
         raise RuntimeError("mido is required to parse MIDI files") from exc
 
     midi = mido.MidiFile(path)

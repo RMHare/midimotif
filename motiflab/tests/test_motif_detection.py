@@ -38,4 +38,5 @@ def test_motif_detection_finds_exact_and_transposed_repetition() -> None:
     assert motifs
     first = motifs[0]
     transformations = {occ.transformation for occ in first.occurrences}
-    assert "exact" in transformations or "transposition" in transformations
+    assert "exact" in transformations
+    assert "transposition" in transformations
