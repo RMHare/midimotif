@@ -99,3 +99,31 @@ def test_estimate_bar_chords_aggregates_notes_across_tracks() -> None:
     assert len(chords) == 1
     assert chords[0].chord == "C:major"
     assert chords[0].confidence == 1.0
+
+
+def test_estimate_bar_chords_ignores_drum_heavy_content() -> None:
+    events = [
+        _event(0, 60, 0, track_id=0),
+        _event(1, 64, 0, track_id=0),
+        _event(2, 67, 0, track_id=0),
+        _event(0, 36, 0, track_id=9, is_drum=True),
+        _event(1, 38, 0, track_id=9, is_drum=True),
+        _event(2, 42, 0, track_id=9, is_drum=True),
+        _event(3, 46, 0, track_id=9, is_drum=True),
+    ]
+
+    chords = estimate_bar_chords(events)
+
+    assert len(chords) == 1
+    assert chords[0].chord == "C:major"
+    assert chords[0].pitch_classes == [0, 4, 7]
+
+
+def test_estimate_bar_chords_returns_empty_for_all_drum_events() -> None:
+    events = [
+        _event(0, 36, 0, track_id=9, is_drum=True),
+        _event(1, 38, 0, track_id=9, is_drum=True),
+        _event(2, 42, 0, track_id=9, is_drum=True),
+    ]
+
+    assert estimate_bar_chords(events) == []
