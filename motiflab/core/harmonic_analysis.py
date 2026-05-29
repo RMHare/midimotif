@@ -36,7 +36,7 @@ def _bar_index_for_event(event: NoteEvent) -> int:
 
 def _best_triad(pitch_classes: list[int]) -> tuple[int, str, float]:
     unique = set(pitch_classes)
-    if not unique:
+    if len(unique) < 2:
         return 0, "unknown", 0.0
 
     best_root = 0
@@ -85,9 +85,12 @@ def estimate_bar_chords(events: list[NoteEvent]) -> list[ChordEstimate]:
 def estimate_global_key(chords: list[ChordEstimate]) -> str | None:
     if not chords:
         return None
-    roots = Counter(chord.root_pc for chord in chords)
+    tonal_chords = [chord for chord in chords if chord.quality in {"major", "minor"}]
+    if not tonal_chords:
+        return None
+    roots = Counter(chord.root_pc for chord in tonal_chords)
     top_root, _ = roots.most_common(1)[0]
-    major_count = sum(1 for chord in chords if chord.quality == "major")
-    minor_count = sum(1 for chord in chords if chord.quality == "minor")
+    major_count = sum(1 for chord in tonal_chords if chord.quality == "major")
+    minor_count = sum(1 for chord in tonal_chords if chord.quality == "minor")
     mode = "major" if major_count >= minor_count else "minor"
     return f"{PITCH_CLASS_NAMES[top_root]} {mode}"

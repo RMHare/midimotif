@@ -55,3 +55,21 @@ def test_estimate_global_key_picks_most_common_root_and_mode() -> None:
     chords = estimate_bar_chords(events)
 
     assert estimate_global_key(chords) == "C major"
+
+
+def test_estimate_bar_chords_marks_single_pitch_bar_as_unknown() -> None:
+    events = [_event(0, 60, 0)]
+
+    chords = estimate_bar_chords(events)
+
+    assert len(chords) == 1
+    assert chords[0].chord == "C:unknown"
+    assert chords[0].quality == "unknown"
+    assert chords[0].confidence == 0.0
+
+
+def test_estimate_global_key_returns_none_for_unknown_chords_only() -> None:
+    events = [_event(0, 60, 0), _event(4, 72, 1)]
+    chords = estimate_bar_chords(events)
+
+    assert estimate_global_key(chords) is None
