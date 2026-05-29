@@ -6,7 +6,7 @@ from dataclasses import asdict, dataclass
 from motiflab.core.constants import DEFAULT_BAR_BEATS
 from motiflab.core.event_model import NoteEvent
 
-PITCH_CLASS_NAMES = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"]
+PITCH_CLASS_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 TRIADS = {
     "major": (0, 4, 7),
     "minor": (0, 3, 7),

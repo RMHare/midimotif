@@ -6,6 +6,8 @@ from statistics import median
 from motiflab.core.constants import DEFAULT_BAR_BEATS
 from motiflab.core.event_model import NoteEvent, TrackSummary
 
+MICROSECONDS_PER_MINUTE = 60_000_000
+
 
 def _likely_role(summary: dict) -> tuple[str, float]:
     if summary["is_drum"]:
@@ -83,7 +85,7 @@ def load_midi_file(path: str, file_id: str | None = None) -> tuple[list[NoteEven
                     offset_tick=offset_tick,
                     duration_tick=duration_tick,
                     velocity=velocity,
-                    estimated_tempo=(60_000_000 / tempo_us_per_beat),
+                    estimated_tempo=(MICROSECONDS_PER_MINUTE / tempo_us_per_beat),
                     bar_index=int(onset_beat // DEFAULT_BAR_BEATS),
                     beat_index=onset_beat % DEFAULT_BAR_BEATS,
                     onset_beat=onset_beat,
