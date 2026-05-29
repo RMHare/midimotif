@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from statistics import median
 
+from motiflab.core.constants import DEFAULT_BAR_BEATS
 from motiflab.core.event_model import NoteEvent, TrackSummary
 
 
@@ -27,13 +28,15 @@ def load_midi_file(path: str, file_id: str | None = None) -> tuple[list[NoteEven
     midi = mido.MidiFile(path)
     file_id = file_id or path
     ticks_per_beat = midi.ticks_per_beat
+    if ticks_per_beat <= 0:
+        raise ValueError("Invalid MIDI file: ticks_per_beat must be > 0")
 
     events: list[NoteEvent] = []
     tempo_us_per_beat = 500000
 
     for track_id, track in enumerate(midi.tracks):
         track_ticks = 0
-        active: dict[tuple[int | None, int], list[tuple[int, int]]] = defaultdict(list)
+        active_notes: dict[tuple[int | None, int], list[tuple[int, int]]] = defaultdict(list)
         program = None
 
         for msg in track:
@@ -43,7 +46,7 @@ def load_midi_file(path: str, file_id: str | None = None) -> tuple[list[NoteEven
             if msg.type == "program_change":
                 program = msg.program
             if msg.type == "note_on" and msg.velocity > 0:
-                active[(getattr(msg, "channel", None), msg.note)].append((track_ticks, msg.velocity))
+                active_notes[(getattr(msg, "channel", None), msg.note)].append((track_ticks, msg.velocity))
                 continue
 
             is_note_off = msg.type == "note_off" or (msg.type == "note_on" and msg.velocity == 0)
@@ -51,9 +54,9 @@ def load_midi_file(path: str, file_id: str | None = None) -> tuple[list[NoteEven
                 continue
 
             key = (getattr(msg, "channel", None), msg.note)
-            if not active[key]:
+            if not active_notes[key]:
                 continue
-            onset_tick, velocity = active[key].pop(0)
+            onset_tick, velocity = active_notes[key].pop(0)
             offset_tick = track_ticks
             if offset_tick <= onset_tick:
                 continue
@@ -81,8 +84,8 @@ def load_midi_file(path: str, file_id: str | None = None) -> tuple[list[NoteEven
                     duration_tick=duration_tick,
                     velocity=velocity,
                     estimated_tempo=(60_000_000 / tempo_us_per_beat),
-                    bar_index=int(onset_beat // 4),
-                    beat_index=onset_beat % 4,
+                    bar_index=int(onset_beat // DEFAULT_BAR_BEATS),
+                    beat_index=onset_beat % DEFAULT_BAR_BEATS,
                     onset_beat=onset_beat,
                     duration_beats=duration_tick / ticks_per_beat,
                     microtiming_ms=None,
@@ -101,12 +104,15 @@ def load_midi_file(path: str, file_id: str | None = None) -> tuple[list[NoteEven
         bars = {event.bar_index for event in tr_events if event.bar_index is not None}
         bars_count = max(1, len(bars))
 
-        start_times = sorted(event.onset_tick for event in tr_events)
-        overlaps = 0
-        for i in range(1, len(start_times)):
-            if start_times[i] == start_times[i - 1]:
-                overlaps += 1
-        polyphony_rate = overlaps / max(1, len(start_times) - 1)
+        intervals = sorted((event.onset_tick, event.offset_tick) for event in tr_events)
+        active_offsets: list[int] = []
+        overlap_count = 0
+        for onset_tick, offset_tick in intervals:
+            active_offsets = [active for active in active_offsets if active > onset_tick]
+            if active_offsets:
+                overlap_count += 1
+            active_offsets.append(offset_tick)
+        polyphony_rate = overlap_count / max(1, len(intervals))
 
         summary_data = {
             "is_drum": any(event.is_drum for event in tr_events),

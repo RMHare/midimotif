@@ -45,19 +45,19 @@ def find_motif_candidates(
     if len(events) < min_notes:
         return []
 
-    sorted_events = sorted(events, key=lambda event: (event.track_id, event.onset_tick, event.pitch))
     by_track: dict[int, list[NoteEvent]] = {}
-    for event in sorted_events:
+    for event in events:
         by_track.setdefault(event.track_id, []).append(event)
 
     results: list[MotifCandidate] = []
     motif_id = 0
 
     for track_id, track_events in by_track.items():
+        track_events = sorted(track_events, key=lambda event: (event.onset_tick, event.pitch))
         used_patterns: set[tuple[int, ...]] = set()
-        limit = min(max_notes, len(track_events))
+        max_window_size = min(max_notes, len(track_events))
 
-        for width in range(min_notes, limit + 1):
+        for width in range(min_notes, max_window_size + 1):
             for start in range(0, len(track_events) - width + 1):
                 base = track_events[start : start + width]
                 base_pitches = [event.pitch for event in base]
