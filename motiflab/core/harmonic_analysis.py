@@ -36,8 +36,10 @@ def _bar_index_for_event(event: NoteEvent) -> int:
 
 def _best_triad(pitch_classes: list[int]) -> tuple[int, str, float]:
     unique = set(pitch_classes)
-    if len(unique) < 2:
+    if not unique:
         return 0, "unknown", 0.0
+    if len(unique) == 1:
+        return next(iter(unique)), "unknown", 0.0
 
     best_root = 0
     best_quality = "unknown"
